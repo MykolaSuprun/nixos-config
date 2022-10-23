@@ -7,19 +7,23 @@
 let
   unstable = import <nixos-unstable> { config = { allowUnfree = true; }; };
 in {
-  system.copySystemConfiguration = true;
-
-  # Allow unfree packages
-  nixpkgs.config.allowUnfree = true;
-  security.acme.acceptTerms = true;
-  security.acme.defaults.email = "admin+acme@example.com";
-  security.pki.certificateFiles = [ "/etc/ssl/certs/" ];
 
 
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
+      <home-manager/nixos>
     ];
+
+  system.copySystemConfiguration = true;
+
+  # Allow unfree packages
+  nixpkgs.config.allowUnfree = true;
+
+
+  security.acme.acceptTerms = true;
+  security.acme.defaults.email = "admin+acme@example.com";
+  security.pki.certificateFiles = [ "/etc/ssl/certs/" ];
 
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
@@ -241,18 +245,93 @@ in {
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
 
+  environment.shells = with pkgs; [ zsh ];
+
   users.users.mykolas = {
     isNormalUser = true;
     description = "Mykola Suprun";
     extraGroups = [ "networkmanager" "wheel" ];
-    packages = with pkgs; [
-      firefox
+    # packages = with pkgs; [
+    #   firefox
+    #   pkgs.libsForQt5.yakuake
+    #   pkgs.tdesktop
+    #   pkgs.megasync
+    #   pkgs.thefuck
+    # ];
+  };
+
+  users.extraUsers.mykolas = {
+    shell = pkgs.zsh;
+  };
+
+  # home-manager.users.mykolas.nixpkgs.config = import ./nixpkgs-config.nix;
+  home-manager.useUserPackages = true;
+  home-manager.useGlobalPkgs = true;
+  home-manager.users.mykolas = { pkgs, ... }: {
+
+    home.packages =  [
+      pkgs.firefox
       pkgs.libsForQt5.yakuake
       pkgs.tdesktop
+      pkgs.oh-my-zsh
       pkgs.megasync
+      pkgs.thefuck
+      pkgs.neovim
+      pkgs.fzf
+      pkgs.fzf-zsh
+
     ];
+
+    programs = {
+
+      git = {
+        enable = true;
+        userName = "Mykola Suprun";
+        userEmail = "mykola.suprun@protonmail.com";
+
+      };
+
+      zsh = {
+        enable = true;
+
+        oh-my-zsh = {
+          enable = true;
+          theme = "robbyrussell";
+          plugins = [ 
+            "git"
+            "cp"
+            "thefuck"
+            "aliases"
+            "branch"
+            "cabal"
+            "docker"
+            "python"
+            "scala"
+            "sbt"
+            "stack"
+            "sublime"
+            "sudo"
+            "systemd"
+            "zsh-interactive-cd" 
+          ];
+      };
+
+      sessionVariables = {
+
+      };
+
+      shellAliases = {
+        vi = "nvim";
+        vim = "nvim";
+        nano = "nvim";
+      };
+
+    };
+
+
+    };
+
   };
-  
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
