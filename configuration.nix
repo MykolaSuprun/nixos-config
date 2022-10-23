@@ -229,14 +229,18 @@ in {
     opengl.setLdLibraryPath = true;
   };
 
-  # Define a user account. Don't forget to set a password with ‘passwd’.
 
   environment.shells = with pkgs; [zsh];
 
+  # Enable Docker
+  virtualisation.docker.enable = true;
+
+
+  # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.mykolas = {
     isNormalUser = true;
     description = "Mykola Suprun";
-    extraGroups = ["networkmanager" "wheel"];
+    extraGroups = ["networkmanager" "wheel" "docker"];
     # packages = with pkgs; [
     #   firefox
     #   pkgs.libsForQt5.yakuake
@@ -312,6 +316,9 @@ in {
           vi = "nvim";
           vim = "nvim";
           nano = "nvim";
+          editconf = "sudo subl /etc/nixos/configuration.nix";
+          sys-build = "sudo nixos-rebuild switch";
+          confdir = "/etc/nixos";
         };
       };
     };
@@ -435,6 +442,8 @@ in {
   # };
 
   # List services that you want to enable:
+  services.searx.enable = true;   
+
 
   # Enable the OpenSSH daemon.
   # services.openssh.enable = true;
