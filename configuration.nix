@@ -265,6 +265,7 @@ in {
       pkgs.fzf-zsh
       pkgs.discord
       pkgs.rnix-lsp
+      pkgs.vlc
     ];
 
     programs = {
@@ -324,6 +325,7 @@ in {
     pkgs.linuxKernel.kernels.linux_zen
     wget
     gitFull
+    pkgs.python3Full
     pkgs.neovim
     pkgs.vscode
     pkgs.sublime4
