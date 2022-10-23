@@ -1,29 +1,29 @@
 # Edit this configuration file to define what should be installed on
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
-
-{ config, pkgs, ... }:
-
-let
-  unstable = import <nixos-unstable> { config = { allowUnfree = true; }; };
+{
+  config,
+  pkgs,
+  ...
+}: let
+  unstable = import <nixos-unstable> {config = {allowUnfree = true;};};
 in {
+  boot.kernelPackages = pkgs.linuxPackages_zen;
 
-
-  imports =
-    [ # Include the results of the hardware scan.
-      ./hardware-configuration.nix
-      <home-manager/nixos>
-    ];
+  imports = [
+    # Include the results of the hardware scan.
+    ./hardware-configuration.nix
+    <home-manager/nixos>
+  ];
 
   system.copySystemConfiguration = true;
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
 
-
   security.acme.acceptTerms = true;
   security.acme.defaults.email = "admin+acme@example.com";
-  security.pki.certificateFiles = [ "/etc/ssl/certs/" ];
+  security.pki.certificateFiles = ["/etc/ssl/certs/"];
 
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
@@ -67,9 +67,8 @@ in {
 
   #Enable flatpak
   services.flatpak.enable = true;
-  xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk pkgs.xdg-desktop-portal-kde];
+  xdg.portal.extraPortals = [pkgs.xdg-desktop-portal-gtk pkgs.xdg-desktop-portal-kde];
   xdg.portal.enable = true;
-
 
   # Configure keymap in X11
   services.xserver = {
@@ -105,47 +104,47 @@ in {
     #media-session.enable = true;
 
     config.pipewire = {
-    "context.properties" = {
-      "link.max-buffers" = 16;
-      "log.level" = 2;
-      "default.clock.rate" = 48000;
-      "default.clock.quantum" = 32;
-      "default.clock.min-quantum" = 32;
-      "default.clock.max-quantum" = 32;
-      "core.daemon" = true;
-      "core.name" = "pipewire-0";
+      "context.properties" = {
+        "link.max-buffers" = 16;
+        "log.level" = 2;
+        "default.clock.rate" = 48000;
+        "default.clock.quantum" = 32;
+        "default.clock.min-quantum" = 32;
+        "default.clock.max-quantum" = 32;
+        "core.daemon" = true;
+        "core.name" = "pipewire-0";
+      };
+      "context.modules" = [
+        {
+          name = "libpipewire-module-rtkit";
+          args = {
+            "nice.level" = -15;
+            "rt.prio" = 88;
+            "rt.time.soft" = 200000;
+            "rt.time.hard" = 200000;
+          };
+          flags = ["ifexists" "nofail"];
+        }
+        {name = "libpipewire-module-protocol-native";}
+        {name = "libpipewire-module-profiler";}
+        {name = "libpipewire-module-metadata";}
+        {name = "libpipewire-module-spa-device-factory";}
+        {name = "libpipewire-module-spa-node-factory";}
+        {name = "libpipewire-module-client-node";}
+        {name = "libpipewire-module-client-device";}
+        {
+          name = "libpipewire-module-portal";
+          flags = ["ifexists" "nofail"];
+        }
+        {
+          name = "libpipewire-module-access";
+          args = {};
+        }
+        {name = "libpipewire-module-adapter";}
+        {name = "libpipewire-module-link-factory";}
+        {name = "libpipewire-module-session-manager";}
+      ];
     };
-    "context.modules" = [
-      {
-        name = "libpipewire-module-rtkit";
-        args = {
-          "nice.level" = -15;
-          "rt.prio" = 88;
-          "rt.time.soft" = 200000;
-          "rt.time.hard" = 200000;
-        };
-        flags = [ "ifexists" "nofail" ];
-      }
-      { name = "libpipewire-module-protocol-native"; }
-      { name = "libpipewire-module-profiler"; }
-      { name = "libpipewire-module-metadata"; }
-      { name = "libpipewire-module-spa-device-factory"; }
-      { name = "libpipewire-module-spa-node-factory"; }
-      { name = "libpipewire-module-client-node"; }
-      { name = "libpipewire-module-client-device"; }
-      {
-        name = "libpipewire-module-portal";
-        flags = [ "ifexists" "nofail" ];
-      }
-      {
-        name = "libpipewire-module-access";
-        args = {};
-      }
-      { name = "libpipewire-module-adapter"; }
-      { name = "libpipewire-module-link-factory"; }
-      { name = "libpipewire-module-session-manager"; }
-    ];
-  };
 
     config.pipewire-pulse = {
       "context.properties" = {
@@ -160,12 +159,12 @@ in {
             "rt.time.soft" = 200000;
             "rt.time.hard" = 200000;
           };
-          flags = [ "ifexists" "nofail" ];
+          flags = ["ifexists" "nofail"];
         }
-        { name = "libpipewire-module-protocol-native"; }
-        { name = "libpipewire-module-client-node"; }
-        { name = "libpipewire-module-adapter"; }
-        { name = "libpipewire-module-metadata"; }
+        {name = "libpipewire-module-protocol-native";}
+        {name = "libpipewire-module-client-node";}
+        {name = "libpipewire-module-adapter";}
+        {name = "libpipewire-module-metadata";}
         {
           name = "libpipewire-module-protocol-pulse";
           args = {
@@ -174,7 +173,7 @@ in {
             "pulse.max.req" = "32/48000";
             "pulse.min.quantum" = "32/48000";
             "pulse.max.quantum" = "32/48000";
-            "server.address" = [ "unix:native" ];
+            "server.address" = ["unix:native"];
           };
         }
       ];
@@ -185,14 +184,14 @@ in {
     };
   };
 
-  services.pipewire  = {
+  services.pipewire = {
     media-session.config.bluez-monitor.rules = [
       {
         # Matches all cards
-        matches = [ { "device.name" = "~bluez_card.*"; } ];
+        matches = [{"device.name" = "~bluez_card.*";}];
         actions = {
           "update-props" = {
-            "bluez5.reconnect-profiles" = [ "hfp_hf" "hsp_hs" "a2dp_sink" ];
+            "bluez5.reconnect-profiles" = ["hfp_hf" "hsp_hs" "a2dp_sink"];
             # mSBC is not expected to work on all headset + adapter combinations.
             "bluez5.msbc-support" = true;
             # SBC-XQ is not expected to work on all headset + adapter combinations.
@@ -203,9 +202,9 @@ in {
       {
         matches = [
           # Matches all sources
-          { "node.name" = "~bluez_input.*"; }
+          {"node.name" = "~bluez_input.*";}
           # Matches all outputs
-          { "node.name" = "~bluez_output.*"; }
+          {"node.name" = "~bluez_output.*";}
         ];
       }
     ];
@@ -214,43 +213,30 @@ in {
   # Enable nvidia drivers
   # NVIDIA drivers are unfree.
 
-  services.xserver.videoDrivers = [ "nvidia" ];
+  services.xserver.videoDrivers = ["nvidia"];
 
   hardware = {
     enableAllFirmware = true;
-    cpu.amd.updateMicrocode = true;  #needs unfree
+    cpu.amd.updateMicrocode = true; #needs unfree
 
     opengl.enable = true;
     # Optionally, you may need to select the appropriate driver version for your specific GPU.
     nvidia.package = config.boot.kernelPackages.nvidiaPackages.stable;
-    #Enable other graphical drivers 
+    #Enable other graphical drivers
     opengl.driSupport = true;
     opengl.driSupport32Bit = true;
-    opengl.extraPackages32 = with pkgs.pkgsi686Linux; [ libva ];
+    opengl.extraPackages32 = with pkgs.pkgsi686Linux; [libva];
     opengl.setLdLibraryPath = true;
   };
 
-  # hardware.opengl.enable = true;
-
-  # # Optionally, you may need to select the appropriate driver version for your specific GPU.
-  # hardware.nvidia.package = config.boot.kernelPackages.nvidiaPackages.stable;
-  # # Enable Vulkan 
-  # hardware.opengl.driSupport = true;
-  # hardware.opengl.driSupport32Bit = true;
-
-  # Enable touchpad support (enabled default in most desktopManager).
-  # services.xserver.libinput.enable = true;
-
-
-
   # Define a user account. Don't forget to set a password with ‘passwd’.
 
-  environment.shells = with pkgs; [ zsh ];
+  environment.shells = with pkgs; [zsh];
 
   users.users.mykolas = {
     isNormalUser = true;
     description = "Mykola Suprun";
-    extraGroups = [ "networkmanager" "wheel" ];
+    extraGroups = ["networkmanager" "wheel"];
     # packages = with pkgs; [
     #   firefox
     #   pkgs.libsForQt5.yakuake
@@ -267,28 +253,25 @@ in {
   # home-manager.users.mykolas.nixpkgs.config = import ./nixpkgs-config.nix;
   home-manager.useUserPackages = true;
   home-manager.useGlobalPkgs = true;
-  home-manager.users.mykolas = { pkgs, ... }: {
-
-    home.packages =  [
+  home-manager.users.mykolas = {pkgs, ...}: {
+    home.packages = [
       pkgs.firefox
       pkgs.libsForQt5.yakuake
-      pkgs.tdesktop
       pkgs.oh-my-zsh
       pkgs.megasync
       pkgs.thefuck
       pkgs.neovim
       pkgs.fzf
       pkgs.fzf-zsh
-
+      pkgs.discord
+      pkgs.rnix-lsp
     ];
 
     programs = {
-
       git = {
         enable = true;
         userName = "Mykola Suprun";
         userEmail = "mykola.suprun@protonmail.com";
-
       };
 
       zsh = {
@@ -297,7 +280,7 @@ in {
         oh-my-zsh = {
           enable = true;
           theme = "robbyrussell";
-          plugins = [ 
+          plugins = [
             "git"
             "cp"
             "thefuck"
@@ -312,32 +295,33 @@ in {
             "sublime"
             "sudo"
             "systemd"
-            "zsh-interactive-cd" 
+            "zsh-interactive-cd"
+            "vi-mode"
           ];
+        };
+
+        sessionVariables = {
+          GTK_IM_MDOULE = "fcitx5";
+          QT_IM_MODULE = "fcitx5";
+          XMODIFIERS = "@im=fcitx5";
+          GLFW_IM_MODULE = "ibus"; # IME support in kitty
+        };
+
+        shellAliases = {
+          vi = "nvim";
+          vim = "nvim";
+          nano = "nvim";
+        };
       };
-
-      sessionVariables = {
-
-      };
-
-      shellAliases = {
-        vi = "nvim";
-        vim = "nvim";
-        nano = "nvim";
-      };
-
     };
-
-
-    };
-
   };
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
 
   environment.systemPackages = with pkgs; [
-  #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
+    #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
+    pkgs.linuxKernel.kernels.linux_zen
     wget
     gitFull
     pkgs.neovim
@@ -349,26 +333,34 @@ in {
     pkgs.clinfo
     pkgs.zsh
     pkgs.oh-my-zsh
-    pkgs.vulkan-tools
-    pkgs.vulkan-loader
-    pkgs.vkBasalt
-    pkgs.dxvk
-    pkgs.vulkan-headers
-    pkgs.vulkan-validation-layers
+
     pkgs.libsForQt5.sddm-kcm
     wine64Packages.fonts
     winePackages.fonts
     pkgs.docker
     pkgs.cacert
+    pkgs.fcitx5-with-addons
+    pkgs.fcitx5-gtk
+    pkgs.fcitx5-rime
+    pkgs.fcitx5-mozc
+    pkgs.fcitx5-hangul
+    pkgs.fcitx5-m17n
+    pkgs.fcitx5-configtool
+    pkgs.fcitx5-table-other
+    pkgs.libsForQt5.fcitx5-qt
+    pkgs.alejandra
 
-    (steam.override { withJava = true; })
-
+    (steam.override {withJava = true;})
 
     unstable.wineWowPackages.stagingFull
     unstable.winetricks
+    unstable.pkgs.vulkan-tools
+    unstable.pkgs.vulkan-loader
+    unstable.pkgs.vkBasalt
+    unstable.pkgs.dxvk
+    unstable.pkgs.vulkan-headers
+    unstable.pkgs.vulkan-validation-layers
     # unstable.wineWowPackages.waylandFull
-    unstable.lutris
-    unstable.bottles
     # # support both 32- and 64-bit applications
     # wineWowPackages.stable
 
@@ -386,26 +378,26 @@ in {
   ];
 
   programs.steam = {
-  enable = true;
-  remotePlay.openFirewall = true; # Open ports in the firewall for Steam Remote Play
-  dedicatedServer.openFirewall = true; # Open ports in the firewall for Source Dedicated Server
+    enable = true;
+    remotePlay.openFirewall = true; # Open ports in the firewall for Steam Remote Play
+    dedicatedServer.openFirewall = true; # Open ports in the firewall for Source Dedicated Server
   };
-
 
   nixpkgs.config.packageOverrides = pkgs: {
     steam = pkgs.steam.override {
-      extraPkgs = pkgs: with pkgs; [
-        libgdiplus
-      ];
+      extraPkgs = pkgs:
+        with pkgs; [
+          libgdiplus
+        ];
     };
   };
 
-  programs.java.enable = true; 
+  programs.java.enable = true;
 
   # Enable and configure Zsh
   programs.zsh.ohMyZsh = {
     enable = true;
-    plugins = [ "git" "python" "man" ];
+    plugins = ["git" "python" "man"];
     theme = "agnoster";
   };
 
@@ -416,9 +408,21 @@ in {
 
   # Enable Fcitx support
   i18n.inputMethod = {
-    enabled = "fcitx";
-    fcitx.engines = with pkgs.fcitx-engines; [ mozc hangul m17n ];
+    enabled = "fcitx5";
+    fcitx5.addons = with pkgs; [
+      fcitx5-rime
+      fcitx5-mozc
+      fcitx5-hangul
+      fcitx5-rime
+      fcitx5-table-other
+      fcitx5-m17n
+    ];
   };
+
+  # i18n.inputMethod = {
+  #   enabled = "fcitx5";
+  #   fcitx5.addons = with pkgs.fcitx-engines; [ mozc hangul m17n rime table-other];
+  # };
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
@@ -458,12 +462,10 @@ in {
     dina-font
     proggyfonts
     inconsolata
-];
-
+  ];
 
   nix.settings = {
-    substituters = [ "https://nix-gaming.cachix.org" ];
-    trusted-public-keys = [ "nix-gaming.cachix.org-1:nbjlureqMbRAxR1gJ/f3hxemL9svXaZF/Ees8vCUUs4=" ];
+    substituters = ["https://nix-gaming.cachix.org"];
+    trusted-public-keys = ["nix-gaming.cachix.org-1:nbjlureqMbRAxR1gJ/f3hxemL9svXaZF/Ees8vCUUs4="];
   };
-
 }
