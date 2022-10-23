@@ -442,7 +442,13 @@ in {
   # };
 
   # List services that you want to enable:
+
   services.searx.enable = true;   
+  services.searx.settingsFile = "/etc/nixos/searx/settings.yml";
+  networking.firewall.enable = true;
+  # 8888 is where Searx is running here
+  networking.firewall.allowedTCPPorts = [22 80 443 8888];
+
 
 
   # Enable the OpenSSH daemon.
