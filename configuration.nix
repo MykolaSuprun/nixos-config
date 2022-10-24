@@ -26,9 +26,13 @@ in {
   security.pki.certificateFiles = ["/etc/ssl/certs/"];
 
   # Bootloader.
-  boot.loader.systemd-boot.enable = true;
+  # boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
   boot.loader.efi.efiSysMountPoint = "/boot/efi";
+  boot.loader.grub.enable = true;
+  boot.loader.grub.devices = [ "nodev" ];
+  boot.loader.grub.efiSupport = true;
+  boot.loader.grub.useOSProber = true;
 
   networking.hostName = "nixos"; # Define your hostname.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
@@ -64,6 +68,8 @@ in {
   # Enable the KDE Plasma Desktop Environment.
   services.xserver.displayManager.sddm.enable = true;
   services.xserver.desktopManager.plasma5.enable = true;
+  # Configure sddm
+  services.xserver.displayManager.sddm.enableHidpi = true;
 
   #Enable flatpak
   services.flatpak.enable = true;
@@ -344,6 +350,9 @@ in {
     pkgs.oh-my-zsh
 
     pkgs.libsForQt5.sddm-kcm
+    pkgs.libsForQt5.ark
+    pkgs.p7zip
+    
     wine64Packages.fonts
     winePackages.fonts
     pkgs.docker
