@@ -323,7 +323,7 @@ in {
           vim = "nvim";
           nano = "nvim";
           editconf = "sudo subl /etc/nixos/configuration.nix";
-          sys-build = "sudo nixos-rebuild switch";
+          sysbuild = "sudo nixos-rebuild switch";
           confdir = "/etc/nixos";
         };
       };
@@ -336,63 +336,71 @@ in {
   environment.systemPackages = with pkgs; [
     #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
     pkgs.linuxKernel.kernels.linux_zen
+
+    #basic tools
     wget
     gitFull
-    pkgs.python3Full
-    pkgs.neovim
-    pkgs.vscode
-    pkgs.sublime4
-    pkgs.libsForQt5.plasma-pa
-    pkgs.libsForQt5.bluedevil
-    pkgs.libsForQt5.plasma-nm
-    pkgs.clinfo
-    pkgs.zsh
-    pkgs.oh-my-zsh
+    p7zip
+    clinfo 
+    zsh
+    oh-my-zsh
+    docker
+    cacert
 
-    pkgs.libsForQt5.sddm-kcm
-    pkgs.libsForQt5.ark
-    pkgs.p7zip
-    
-    wine64Packages.fonts
-    winePackages.fonts
-    pkgs.docker
-    pkgs.cacert
-    pkgs.fcitx5-with-addons
-    pkgs.fcitx5-gtk
-    pkgs.fcitx5-rime
-    pkgs.fcitx5-mozc
-    pkgs.fcitx5-hangul
-    pkgs.fcitx5-m17n
-    pkgs.fcitx5-configtool
-    pkgs.fcitx5-table-other
-    pkgs.libsForQt5.fcitx5-qt
-    pkgs.alejandra
+    #Editors
+    neovim
+    vscode
+    vscode-extensions.ms-python.python
+    vscode-extensions.ms-python.vscode-pylance
+    vscode-extensions.ms-pyright.pyright
+    vscode-extensions.haskell.haskell
+    sublime4
 
+
+
+    #plasma apps
+    libsForQt5.plasma-pa
+    libsForQt5.bluedevil
+    libsForQt5.plasma-nm
+    libsForQt5.sddm-kcm
+    libsForQt5.ark
+
+    #fcitx
+    fcitx5-with-addons
+    fcitx5-gtk
+    fcitx5-rime
+    fcitx5-mozc
+    fcitx5-hangul
+    fcitx5-m17n
+    fcitx5-configtool
+    fcitx5-table-other
+    libsForQt5.fcitx5-qt
+
+    #dev tools
+    alejandra
+
+    # python
+    python3Full
+
+    # haskell
+    ghc
+    haskell-language-server
+    stack
+
+    #
+
+    #graphic, steam, wine libraries
     (steam.override {withJava = true;})
-
     unstable.wineWowPackages.stagingFull
     unstable.winetricks
-    unstable.pkgs.vulkan-tools
-    unstable.pkgs.vulkan-loader
-    unstable.pkgs.vkBasalt
-    unstable.pkgs.dxvk
-    unstable.pkgs.vulkan-headers
-    unstable.pkgs.vulkan-validation-layers
-    # unstable.wineWowPackages.waylandFull
-    # # support both 32- and 64-bit applications
-    # wineWowPackages.stable
-
-    # # support 64-bit only
-    # (wine.override { wineBuild = "wine64"; })
-
-    # # wine-staging (version with experimental features)
-    # wineWowPackages.staging
-
-    # # winetricks (all versions)
-    # winetricks
-
-    # # native wayland support (unstable)
-    # wineWowPackages.waylandFull
+    unstable.vulkan-tools
+    unstable.vulkan-loader
+    unstable.vkBasalt
+    unstable.dxvk
+    unstable.vulkan-headers
+    unstable.vulkan-validation-layers
+    wine64Packages.fonts
+    winePackages.fonts
   ];
 
   programs.steam = {
