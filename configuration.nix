@@ -1,40 +1,109 @@
 # Edit this configuration file to define what should be installed on
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
-{
-  config,
-  pkgs,
-  ...
-}: let
+
+{ config, pkgs, ... }:
+let
   unstable = import <nixos-unstable> {config = {allowUnfree = true;};};
 in {
-  boot.kernelPackages = pkgs.linuxPackages_zen;
+  imports =
+    [ # Include the results of the hardware scan.
+      ./hardware-configuration.nix
+      <home-manager/nixos>
+    ];
 
-  imports = [
-    # Include the results of the hardware scan.
-    ./hardware-configuration.nix
-    <home-manager/nixos>
-  ];
+  system.autoUpgrade = {
+    enable = true;
+    channel = "https://nixos.org/channels/nixos-unstable";
+  };
+ 
+  # nix settings`
+  nix =  {
+    # settings.experimental-features = [ "nix-command" "flakes" ];
+    settings.auto-optimise-store = true;
+    gc = {
+      automatic = true;
+      dates = "weekly";
+      options = "--delete-older-than 10d";
+    };
+  };
 
+  #Enable flatpak
+  services.flatpak.enable = true;
+  xdg.portal.extraPortals = [pkgs.xdg-desktop-portal-gtk pkgs.xdg-desktop-portal-kde];
+  xdg.portal.enable = true;
+
+  # backup system configuration 
   system.copySystemConfiguration = true;
 
-  # Allow unfree packages
-  nixpkgs.config.allowUnfree = true;
-
-  security.acme.acceptTerms = true;
-  security.acme.defaults.email = "admin+acme@example.com";
-  security.pki.certificateFiles = ["/etc/ssl/certs/"];
-
   # Bootloader.
-  # boot.loader.systemd-boot.enable = true;
+  boot.loader.grub.enable = true;
+  boot.loader.grub.version = 2;
+  boot.loader.grub.device = "nodev";
+  boot.loader.grub.useOSProber = true;
+  boot.loader.grub.efiSupport = true;
   boot.loader.efi.canTouchEfiVariables = true;
   boot.loader.efi.efiSysMountPoint = "/boot/efi";
-  boot.loader.grub.enable = true;
-  boot.loader.grub.devices = [ "nodev" ];
-  boot.loader.grub.efiSupport = true;
-  boot.loader.grub.useOSProber = true;
+  
+  # Linux kernel
+    # boot.kernelPackages = pkgs.linuxPackages_zen;
+  boot.kernelPackages = pkgs.linuxPackages_latest;
 
-  networking.hostName = "nixos"; # Define your hostname.
+  # Nvidia drivers
+  services.xserver.videoDrivers = ["nvidia"];
+  services.xmr-stak.cudaSupport = true;
+  
+
+  # hardware settings
+  hardware = {
+    # Optionally, you may need to select the appropriate driver version for your specific GPU.
+    # nvidia.package = config.boot.kernelPackages.nvidiaPackages.stable;
+
+    enableAllFirmware = true;
+
+    nvidia.nvidiaSettings = true;
+
+    cpu.amd.updateMicrocode = true; #needs unfree
+    opengl = {
+      enable = true;
+      #Enable other graphical drivers
+      driSupport = true;
+      driSupport32Bit = true;
+      extraPackages32 = with pkgs.pkgsi686Linux; [libva];
+      setLdLibraryPath = true;
+    };
+
+
+    bluetooth = {
+      enable = true;
+      settings = {
+        General = {
+          Enable = "Source,Sink,Media,Socket";
+        };
+      };
+
+    };
+  };
+
+  # Enable Docker 
+  virtualisation.docker = {
+    enable = true;
+    enableOnBoot = true;
+    enableNvidia = true;
+  };
+  # Set up desktop environment
+  services.xserver.enable = true;
+  services.xserver.displayManager.sddm.enable = true;
+  services.xserver.desktopManager.plasma5.enable = true;
+  services.xserver.desktopManager.plasma5.phononBackend = "vlc";
+  services.xserver.desktopManager.plasma5.useQtScaling = true;
+  services.xserver.desktopManager.plasma5.runUsingSystemd = true;
+  programs.gnupg.agent.pinentryFlavor = "qt";
+  # GTK theme fix
+  programs.dconf.enable = true;
+
+
+  networking.hostName = "Geks-Nixos"; # Define your hostname.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
   # Configure network proxy if necessary
@@ -62,211 +131,289 @@ in {
     LC_TIME = "en_IE.utf8";
   };
 
-  # Enable the X11 windowing system.
-  services.xserver.enable = true;
-
-  # Enable the KDE Plasma Desktop Environment.
-  services.xserver.displayManager.sddm.enable = true;
-  services.xserver.desktopManager.plasma5.enable = true;
-  # Configure sddm
-  services.xserver.displayManager.sddm.enableHidpi = true;
-
-  #Enable flatpak
-  services.flatpak.enable = true;
-  xdg.portal.extraPortals = [pkgs.xdg-desktop-portal-gtk pkgs.xdg-desktop-portal-kde];
-  xdg.portal.enable = true;
-
   # Configure keymap in X11
   services.xserver = {
     layout = "us";
     xkbVariant = "";
   };
 
-  # Enable CUPS to print documents.
-  services.printing.enable = true;
-
-  # Hardware settings
-  hardware.bluetooth.enable = true;
-  hardware.bluetooth.settings = {
-    General = {
-      Enable = "Source,Sink,Media,Socket";
-    };
-  };
-
-  # Enable sound with pipewire.
-  sound.enable = true;
-  hardware.pulseaudio.enable = false;
-  security.rtkit.enable = true;
-  services.pipewire = {
-    enable = true;
-    alsa.enable = true;
-    alsa.support32Bit = true;
-    pulse.enable = true;
-    # If you want to use JACK applications, uncomment this
-    jack.enable = true;
-
-    # use the example session manager (no others are packaged yet so this is enabled by default,
-    # no need to redefine it in your config for now)
-    #media-session.enable = true;
-
-    config.pipewire = {
-      "context.properties" = {
-        "link.max-buffers" = 16;
-        "log.level" = 2;
-        "default.clock.rate" = 48000;
-        "default.clock.quantum" = 32;
-        "default.clock.min-quantum" = 32;
-        "default.clock.max-quantum" = 32;
-        "core.daemon" = true;
-        "core.name" = "pipewire-0";
-      };
-      "context.modules" = [
-        {
-          name = "libpipewire-module-rtkit";
-          args = {
-            "nice.level" = -15;
-            "rt.prio" = 88;
-            "rt.time.soft" = 200000;
-            "rt.time.hard" = 200000;
-          };
-          flags = ["ifexists" "nofail"];
-        }
-        {name = "libpipewire-module-protocol-native";}
-        {name = "libpipewire-module-profiler";}
-        {name = "libpipewire-module-metadata";}
-        {name = "libpipewire-module-spa-device-factory";}
-        {name = "libpipewire-module-spa-node-factory";}
-        {name = "libpipewire-module-client-node";}
-        {name = "libpipewire-module-client-device";}
-        {
-          name = "libpipewire-module-portal";
-          flags = ["ifexists" "nofail"];
-        }
-        {
-          name = "libpipewire-module-access";
-          args = {};
-        }
-        {name = "libpipewire-module-adapter";}
-        {name = "libpipewire-module-link-factory";}
-        {name = "libpipewire-module-session-manager";}
-      ];
-    };
-
-    config.pipewire-pulse = {
-      "context.properties" = {
-        "log.level" = 2;
-      };
-      "context.modules" = [
-        {
-          name = "libpipewire-module-rtkit";
-          args = {
-            "nice.level" = -15;
-            "rt.prio" = 88;
-            "rt.time.soft" = 200000;
-            "rt.time.hard" = 200000;
-          };
-          flags = ["ifexists" "nofail"];
-        }
-        {name = "libpipewire-module-protocol-native";}
-        {name = "libpipewire-module-client-node";}
-        {name = "libpipewire-module-adapter";}
-        {name = "libpipewire-module-metadata";}
-        {
-          name = "libpipewire-module-protocol-pulse";
-          args = {
-            "pulse.min.req" = "32/48000";
-            "pulse.default.req" = "32/48000";
-            "pulse.max.req" = "32/48000";
-            "pulse.min.quantum" = "32/48000";
-            "pulse.max.quantum" = "32/48000";
-            "server.address" = ["unix:native"];
-          };
-        }
-      ];
-      "stream.properties" = {
-        "node.latency" = "32/48000";
-        "resample.quality" = 1;
-      };
-    };
-  };
-
-  services.pipewire = {
-    media-session.config.bluez-monitor.rules = [
-      {
-        # Matches all cards
-        matches = [{"device.name" = "~bluez_card.*";}];
-        actions = {
-          "update-props" = {
-            "bluez5.reconnect-profiles" = ["hfp_hf" "hsp_hs" "a2dp_sink"];
-            # mSBC is not expected to work on all headset + adapter combinations.
-            "bluez5.msbc-support" = true;
-            # SBC-XQ is not expected to work on all headset + adapter combinations.
-            "bluez5.sbc-xq-support" = true;
-          };
-        };
-      }
-      {
-        matches = [
-          # Matches all sources
-          {"node.name" = "~bluez_input.*";}
-          # Matches all outputs
-          {"node.name" = "~bluez_output.*";}
-        ];
-      }
+  i18n.inputMethod = {
+    enabled = "fcitx5";
+    fcitx.engines = with pkgs.fcitx-engines; [ mozc hangul m17n unikey table-other rime ];
+    fcitx5.addons = with pkgs; [ 
+      fcitx5-rime 
+      fcitx5-gtk 
+      libsForQt5.fcitx5-qt 
+      fcitx5-with-addons
+      fcitx5-chinese-addons
+      fcitx5-table-other
+      fcitx5-configtool
+      fcitx5-hangul
+      fcitx5-unikey
+      fcitx5-m17n
+      fcitx5-mozc
     ];
   };
 
-  # Enable nvidia drivers
-  # NVIDIA drivers are unfree.
 
-  services.xserver.videoDrivers = ["nvidia"];
+  # sound settings
+  sound.enable = true;
+    hardware.pulseaudio.enable = false;
+    security.rtkit.enable = true;
+    services.pipewire = {
+      enable = true;
+      alsa.enable = true;
+      alsa.support32Bit = true;
+      pulse.enable = true;
+      # If you want to use JACK applications, uncomment this
+      jack.enable = true;
 
-  hardware = {
-    enableAllFirmware = true;
-    cpu.amd.updateMicrocode = true; #needs unfree
+      # use the example session manager (no others are packaged yet so this is enabled by default,
+      # no need to redefine it in your config for now)
+      #media-session.enable = true;
 
-    opengl.enable = true;
-    # Optionally, you may need to select the appropriate driver version for your specific GPU.
-    nvidia.package = config.boot.kernelPackages.nvidiaPackages.stable;
-    #Enable other graphical drivers
-    opengl.driSupport = true;
-    opengl.driSupport32Bit = true;
-    opengl.extraPackages32 = with pkgs.pkgsi686Linux; [libva];
-    opengl.setLdLibraryPath = true;
+      config.pipewire = {
+        "context.properties" = {
+          "link.max-buffers" = 16;
+          "log.level" = 2;
+          "default.clock.rate" = 48000;
+          "default.clock.quantum" = 32;
+          "default.clock.min-quantum" = 32;
+          "default.clock.max-quantum" = 32;
+          "core.daemon" = true;
+          "core.name" = "pipewire-0";
+        };
+        "context.modules" = [
+          {
+            name = "libpipewire-module-rtkit";
+            args = {
+              "nice.level" = -15;
+              "rt.prio" = 88;
+              "rt.time.soft" = 200000;
+              "rt.time.hard" = 200000;
+            };
+            flags = ["ifexists" "nofail"];
+          }
+          {name = "libpipewire-module-protocol-native";}
+          {name = "libpipewire-module-profiler";}
+          {name = "libpipewire-module-metadata";}
+          {name = "libpipewire-module-spa-device-factory";}
+          {name = "libpipewire-module-spa-node-factory";}
+          {name = "libpipewire-module-client-node";}
+          {name = "libpipewire-module-client-device";}
+          {
+            name = "libpipewire-module-portal";
+            flags = ["ifexists" "nofail"];
+          }
+          {
+            name = "libpipewire-module-access";
+            args = {};
+          }
+          {name = "libpipewire-module-adapter";}
+          {name = "libpipewire-module-link-factory";}
+          {name = "libpipewire-module-session-manager";}
+        ];
+      };
+
+      config.pipewire-pulse = {
+        "context.properties" = {
+          "log.level" = 2;
+        };
+        "context.modules" = [
+          {
+            name = "libpipewire-module-rtkit";
+            args = {
+              "nice.level" = -15;
+              "rt.prio" = 88;
+              "rt.time.soft" = 200000;
+              "rt.time.hard" = 200000;
+            };
+            flags = ["ifexists" "nofail"];
+          }
+          {name = "libpipewire-module-protocol-native";}
+          {name = "libpipewire-module-client-node";}
+          {name = "libpipewire-module-adapter";}
+          {name = "libpipewire-module-metadata";}
+          {
+            name = "libpipewire-module-protocol-pulse";
+            args = {
+              "pulse.min.req" = "32/48000";
+              "pulse.default.req" = "32/48000";
+              "pulse.max.req" = "32/48000";
+              "pulse.min.quantum" = "32/48000";
+              "pulse.max.quantum" = "32/48000";
+              "server.address" = ["unix:native"];
+            };
+          }
+        ];
+        "stream.properties" = {
+          "node.latency" = "32/48000";
+          "resample.quality" = 1;
+        };
+      };
+    };
+
+    services.pipewire = {
+      media-session.config.bluez-monitor.rules = [
+        {
+          # Matches all cards
+          matches = [{"device.name" = "~bluez_card.*";}];
+          actions = {
+            "update-props" = {
+              "bluez5.reconnect-profiles" = ["hfp_hf" "hsp_hs" "a2dp_sink"];
+              # mSBC is not expected to work on all headset + adapter combinations.
+              "bluez5.msbc-support" = true;
+              # SBC-XQ is not expected to work on all headset + adapter combinations.
+              "bluez5.sbc-xq-support" = true;
+            };
+          };
+        }
+        {
+          matches = [
+            # Matches all sources
+            {"node.name" = "~bluez_input.*";}
+            # Matches all outputs
+            {"node.name" = "~bluez_output.*";}
+          ];
+        }
+      ];
+    };
+
+  # Allow unfree packages
+  nixpkgs.config.allowUnfree = true;
+
+  # List packages installed in system profile. To search, run:
+  # $ nix search wget
+  environment.systemPackages = with pkgs; [
+   
+    # basic packages
+    wget
+    p7zip
+    rar
+    xorg.xhost
+    distrobox
+    ntfs3g
+    mpv
+    github-desktop
+
+    # python
+    python3Full
+    python310Packages.websockets
+    python310Packages.pip
+
+    #fcitx
+    libsForQt5.fcitx-qt5
+    fcitx-configtool
+    librime
+    libhangul
+    rime-data
+    vimPlugins.fcitx-vim
+    fcitx5-gtk
+
+    # plasma
+    libsForQt5.konsole
+    libsForQt5.ark
+
+    #graphic, steam, wine libraries
+    mesa
+    libdrm
+    # (steam.override {withJava = true;})
+    wine-staging
+    wine-wayland
+    winetricks
+    vulkan-tools
+    vulkan-loader
+    vulkan-extension-layer
+    vkBasalt
+    dxvk
+    vulkan-headers
+    vulkan-validation-layers
+    wine64Packages.fonts
+    winePackages.fonts
+    lutris
+  ];
+
+  # steam
+  # programs.steam = {
+  #   enable = true;
+  #   remotePlay.openFirewall = true; # Open ports in the firewall for Steam Remote Play
+  #   dedicatedServer.openFirewall = true; # Open ports in the firewall for Source Dedicated Server
+  # };
+
+  # nixpkgs.config.packageOverrides = pkgs: {
+  #   steam = pkgs.steam.override {
+  #     extraPkgs = pkgs:
+  #       with pkgs; [
+  #         libgdiplus
+  #       ];
+  #   };
+  # };
+
+  nixpkgs.overlays = [
+    (self: super:
+      { lutris = super.lutris.override { extraLibraries = pkgs: [pkgs.libunwind ]; }; })
+  ];
+
+
+  # Some programs need SUID wrappers, can be configured further or are
+  # started in user sessions.
+  # programs.mtr.enable = true;
+  # programs.gnupg.agent = {
+  #   enable = true;
+  #   enableSSHSupport = true;
+  # };
+  # List services that you want to enable:
+
+  # Enable the OpenSSH daemon.
+  # services.openssh.enable = true;
+
+  # Open ports in the firewall.
+  # networking.firewall.allowedTCPPorts = [ ... ];
+  # networking.firewall.allowedUDPPorts = [ ... ];
+  # Or disable the firewall altogether.
+  # networking.firewall.enable = false;
+
+  # This value determines the NixOS release from which the default
+  # settings for stateful data, like file locations and database versions
+  # on your system were taken. It‘s perfectly fine and recommended to leave
+  # this value at the release version of the first install of this system.
+  # Before changing this value read the documentation for this option
+  # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
+  system.stateVersion = "22.05"; # Did you read the comment?
+
+  # set Neovim as vi and vim
+  programs = {
+    neovim.enable = true;
+    neovim.viAlias = true;
+    neovim.vimAlias = true;
+    thefuck.enable = true;
   };
 
-
-  environment.shells = with pkgs; [zsh];
-
-  # Enable Docker
-  virtualisation.docker.enable = true;
-
+  environment.shells = with pkgs; [zsh bashInteractive ];
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.mykolas = {
     isNormalUser = true;
     description = "Mykola Suprun";
-    extraGroups = ["networkmanager" "wheel" "docker"];
-    # packages = with pkgs; [
-    #   firefox
-    #   pkgs.libsForQt5.yakuake
-    #   pkgs.tdesktop
-    #   pkgs.megasync
-    #   pkgs.thefuck
-    # ];
+    extraGroups = [ "networkmanager" "wheel" "docker"];
+    packages = with pkgs; [];
   };
 
   users.extraUsers.mykolas = {
-    shell = pkgs.zsh;
+    shell = pkgs.bashInteractive;
   };
 
-  # home-manager.users.mykolas.nixpkgs.config = import ./nixpkgs-config.nix;
+
   home-manager.useUserPackages = true;
   home-manager.useGlobalPkgs = true;
   home-manager.users.mykolas = {pkgs, ...}: {
+    home.stateVersion = "22.05";
     home.packages = [
       pkgs.firefox
-      pkgs.libsForQt5.yakuake
+      pkgs.sublime4
+      pkgs.vscode
+      pkgs.brave
+      pkgs.ledger
       pkgs.oh-my-zsh
       pkgs.megasync
       pkgs.thefuck
@@ -276,6 +423,12 @@ in {
       pkgs.discord
       pkgs.rnix-lsp
       pkgs.vlc
+      pkgs.tdesktop
+      pkgs.thefuck
+      pkgs.libsForQt5.yakuake
+      pkgs.libsForQt5.qmltermwidget
+      pkgs.libsForQt5.qt5.qtwebsockets
+
     ];
 
     programs = {
@@ -285,8 +438,23 @@ in {
         userEmail = "mykola.suprun@protonmail.com";
       };
 
+      bash = {
+        enableCompletion = true;
+
+        shellAliases = {
+          vi = "nvim";
+          vim = "nvim";
+          nano = "nvim";
+          editconf = "sudo subl /etc/nixos/configuration.nix";
+          sysbuild = "sudo nixos-rebuild switch";
+          sysupgrade = "sudo nixos-rebuild switch --upgrade";
+          confdir = "/etc/nixos";
+        };
+
+      };
+
       zsh = {
-        enable = true;
+        # enable = true; 
 
         oh-my-zsh = {
           enable = true;
@@ -324,166 +492,13 @@ in {
           nano = "nvim";
           editconf = "sudo subl /etc/nixos/configuration.nix";
           sysbuild = "sudo nixos-rebuild switch";
+          sysupgrade = "sudo nixos-rebuild switch --upgrade";
           confdir = "/etc/nixos";
         };
       };
     };
   };
 
-  # List packages installed in system profile. To search, run:
-  # $ nix search wget
-
-  environment.systemPackages = with pkgs; [
-    #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
-    pkgs.linuxKernel.kernels.linux_zen
-
-    #basic tools
-    wget
-    gitFull
-    p7zip
-    clinfo 
-    zsh
-    oh-my-zsh
-    docker
-    cacert
-
-    #Editors
-    neovim
-    vscode
-    vscode-extensions.ms-python.python
-    vscode-extensions.ms-python.vscode-pylance
-    vscode-extensions.ms-pyright.pyright
-    vscode-extensions.haskell.haskell
-    sublime4
-
-
-
-    #plasma apps
-    libsForQt5.plasma-pa
-    libsForQt5.bluedevil
-    libsForQt5.plasma-nm
-    libsForQt5.sddm-kcm
-    libsForQt5.ark
-
-    #fcitx
-    fcitx5-with-addons
-    fcitx5-gtk
-    fcitx5-rime
-    fcitx5-mozc
-    fcitx5-hangul
-    fcitx5-m17n
-    fcitx5-configtool
-    fcitx5-table-other
-    libsForQt5.fcitx5-qt
-
-    #dev tools
-    alejandra
-
-    # python
-    python3Full
-
-    # haskell
-    ghc
-    haskell-language-server
-    stack
-
-    #
-
-    #graphic, steam, wine libraries
-    (steam.override {withJava = true;})
-    unstable.wineWowPackages.stagingFull
-    unstable.winetricks
-    unstable.vulkan-tools
-    unstable.vulkan-loader
-    unstable.vkBasalt
-    unstable.dxvk
-    unstable.vulkan-headers
-    unstable.vulkan-validation-layers
-    wine64Packages.fonts
-    winePackages.fonts
-  ];
-
-  programs.steam = {
-    enable = true;
-    remotePlay.openFirewall = true; # Open ports in the firewall for Steam Remote Play
-    dedicatedServer.openFirewall = true; # Open ports in the firewall for Source Dedicated Server
-  };
-
-  nixpkgs.config.packageOverrides = pkgs: {
-    steam = pkgs.steam.override {
-      extraPkgs = pkgs:
-        with pkgs; [
-          libgdiplus
-        ];
-    };
-  };
-
-  programs.java.enable = true;
-
-  # Enable and configure Zsh
-  programs.zsh.ohMyZsh = {
-    enable = true;
-    plugins = ["git" "python" "man"];
-    theme = "agnoster";
-  };
-
-  programs.zsh.ohMyZsh.customPkgs = [
-    pkgs.nix-zsh-completions
-    # and even more...
-  ];
-
-  # Enable Fcitx support
-  i18n.inputMethod = {
-    enabled = "fcitx5";
-    fcitx5.addons = with pkgs; [
-      fcitx5-rime
-      fcitx5-mozc
-      fcitx5-hangul
-      fcitx5-rime
-      fcitx5-table-other
-      fcitx5-m17n
-    ];
-  };
-
-  # i18n.inputMethod = {
-  #   enabled = "fcitx5";
-  #   fcitx5.addons = with pkgs.fcitx-engines; [ mozc hangul m17n rime table-other];
-  # };
-
-  # Some programs need SUID wrappers, can be configured further or are
-  # started in user sessions.
-  # programs.mtr.enable = true;
-  # programs.gnupg.agent = {
-  #   enable = true;
-  #   enableSSHSupport = true;
-  # };
-
-  # List services that you want to enable:
-
-  services.searx.enable = true;   
-  services.searx.settingsFile = "/etc/nixos/searx/settings.yml";
-  networking.firewall.enable = true;
-  # 8888 is where Searx is running here
-  networking.firewall.allowedTCPPorts = [22 80 443 8888];
-
-
-
-  # Enable the OpenSSH daemon.
-  # services.openssh.enable = true;
-
-  # Open ports in the firewall.
-  # networking.firewall.allowedTCPPorts = [ ... ];
-  # networking.firewall.allowedUDPPorts = [ ... ];
-  # Or disable the firewall altogether.
-  # networking.firewall.enable = false;
-
-  # This value determines the NixOS release from which the default
-  # settings for stateful data, like file locations and database versions
-  # on your system were taken. It‘s perfectly fine and recommended to leave
-  # this value at the release version of the first install of this system.
-  # Before changing this value read the documentation for this option
-  # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "22.05"; # Did you read the comment?
 
   fonts.fonts = with pkgs; [
     noto-fonts
@@ -497,9 +512,7 @@ in {
     proggyfonts
     inconsolata
   ];
+  fonts.fontDir.enable = true;
 
-  nix.settings = {
-    substituters = ["https://nix-gaming.cachix.org"];
-    trusted-public-keys = ["nix-gaming.cachix.org-1:nbjlureqMbRAxR1gJ/f3hxemL9svXaZF/Ees8vCUUs4="];
-  };
 }
+
