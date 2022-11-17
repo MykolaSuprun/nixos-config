@@ -295,6 +295,9 @@ in {
     ntfs3g
     mpv
     github-desktop
+    zsh
+    oh-my-zsh
+    fzf-zsh
 
     # python
     python3Full
@@ -454,7 +457,7 @@ in {
       };
 
       zsh = {
-        # enable = true; 
+        enable = true; 
 
         oh-my-zsh = {
           enable = true;
@@ -476,6 +479,7 @@ in {
             "systemd"
             "zsh-interactive-cd"
             "vi-mode"
+            "archlinux"
           ];
         };
 
