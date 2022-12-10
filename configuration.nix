@@ -30,7 +30,7 @@ in {
 
   #Enable flatpak
   services.flatpak.enable = true;
-  xdg.portal.extraPortals = [pkgs.xdg-desktop-portal-gtk pkgs.xdg-desktop-portal-kde];
+  # xdg.portal.extraPortals = [pkgs.xdg-desktop-portal-gtk pkgs.xdg-desktop-portal-kde];
   xdg.portal.enable = true;
 
   # backup system configuration 
@@ -300,9 +300,10 @@ in {
     fzf-zsh
 
     # python
-    python3Full
+    python310
     python310Packages.websockets
     python310Packages.pip
+    # python310Packages.poetry
 
     #fcitx
     libsForQt5.fcitx-qt5
@@ -333,7 +334,7 @@ in {
     vulkan-validation-layers
     wine64Packages.fonts
     winePackages.fonts
-    lutris
+    # lutris
   ];
 
   # steam
@@ -352,10 +353,10 @@ in {
   #   };
   # };
 
-  nixpkgs.overlays = [
-    (self: super:
-      { lutris = super.lutris.override { extraLibraries = pkgs: [pkgs.libunwind ]; }; })
-  ];
+  # nixpkgs.overlays = [
+  #   (self: super:
+  #     { lutris = super.lutris.override { extraLibraries = pkgs: [pkgs.libunwind ]; }; })
+  # ];
 
 
   # Some programs need SUID wrappers, can be configured further or are
@@ -428,10 +429,11 @@ in {
       pkgs.vlc
       pkgs.tdesktop
       pkgs.thefuck
+      pkgs.libsForQt5.konsole
       pkgs.libsForQt5.yakuake
       pkgs.libsForQt5.qmltermwidget
       pkgs.libsForQt5.qt5.qtwebsockets
-
+      pkgs.qbittorrent
     ];
 
     programs = {
@@ -452,6 +454,7 @@ in {
           sysbuild = "sudo nixos-rebuild switch";
           sysupgrade = "sudo nixos-rebuild switch --upgrade";
           confdir = "/etc/nixos";
+
         };
 
       };
@@ -461,7 +464,7 @@ in {
 
         oh-my-zsh = {
           enable = true;
-          theme = "robbyrussell";
+          theme = "agnoster";
           plugins = [
             "git"
             "cp"
@@ -498,6 +501,8 @@ in {
           sysbuild = "sudo nixos-rebuild switch";
           sysupgrade = "sudo nixos-rebuild switch --upgrade";
           confdir = "/etc/nixos";
+          nsgc = "nix-collect-garbage";
+          arch = "distrobox-enter arch";
         };
       };
     };
