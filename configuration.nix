@@ -444,8 +444,11 @@ in {
       };
 
       bash = {
+        enable = true;
         enableCompletion = true;
-
+        bashrcExtra = ''
+          . /home/mykolas/MEGA/Sources/home_scripts/bashrc
+        '';
         shellAliases = {
           vi = "nvim";
           vim = "nvim";
@@ -464,6 +467,15 @@ in {
 
         oh-my-zsh = {
           enable = true;
+          extraConfig = ''
+            if [[ $(uname -a | grep arch) ]]
+            then 
+              distrobox-host-exec xhost +local:
+              xhost +SI:localuser:$USER
+              PROMPT="%B%F{47}%n%f%b%B:%b%B%F{39}%m%f%b%B>%b "
+            fi
+            clear
+          '';
           theme = "agnoster";
           plugins = [
             "git"
