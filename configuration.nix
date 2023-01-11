@@ -49,6 +49,12 @@ in {
     # boot.kernelPackages = pkgs.linuxPackages_zen;
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
+  # security
+  security.tpm2.enable = true;
+  # security.tpm2.abrmd.enable = true;
+  security.tpm2.pkcs11.enable = true;
+
+
   # Nvidia drivers
   services.xserver.videoDrivers = ["nvidia"];
   services.xmr-stak.cudaSupport = true;
@@ -85,12 +91,21 @@ in {
     };
   };
 
-  # Enable Docker 
-  virtualisation.docker = {
-    enable = true;
-    enableOnBoot = true;
-    enableNvidia = true;
+  virtualisation = {
+    libvirtd.enable = true;
+    libvirtd.qemu.swtpm.enable = true;
+    libvirtd.qemu.ovmf.enable = true;
+    spiceUSBRedirection.enable = true;
+
+    # Enable Docker 
+    docker = {
+      enable = true;
+      enableOnBoot = true;
+      enableNvidia = true;
+    };
   };
+
+
   # Set up desktop environment
   services.xserver.enable = true;
   services.xserver.displayManager.sddm.enable = true;
@@ -295,9 +310,20 @@ in {
     ntfs3g
     mpv
     github-desktop
-    zsh
     oh-my-zsh
     fzf-zsh
+    virt-manager
+    qemu
+    kvmtool
+    # tpm-tools
+    # tpm2-tss
+    tpm2-tools
+    # tpm2-abrmd
+    libtpms
+    swtpm
+    OVMFFull
+    spice
+    spice-gtk
 
     # python
     python310
@@ -337,26 +363,6 @@ in {
     # lutris
   ];
 
-  # steam
-  # programs.steam = {
-  #   enable = true;
-  #   remotePlay.openFirewall = true; # Open ports in the firewall for Steam Remote Play
-  #   dedicatedServer.openFirewall = true; # Open ports in the firewall for Source Dedicated Server
-  # };
-
-  # nixpkgs.config.packageOverrides = pkgs: {
-  #   steam = pkgs.steam.override {
-  #     extraPkgs = pkgs:
-  #       with pkgs; [
-  #         libgdiplus
-  #       ];
-  #   };
-  # };
-
-  # nixpkgs.overlays = [
-  #   (self: super:
-  #     { lutris = super.lutris.override { extraLibraries = pkgs: [pkgs.libunwind ]; }; })
-  # ];
 
 
   # Some programs need SUID wrappers, can be configured further or are
@@ -391,15 +397,17 @@ in {
     neovim.viAlias = true;
     neovim.vimAlias = true;
     thefuck.enable = true;
+    zsh.enable = true;
   };
 
-  environment.shells = with pkgs; [zsh bashInteractive ];
+  environment.shells = with pkgs; [zsh];
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.mykolas = {
     isNormalUser = true;
     description = "Mykola Suprun";
-    extraGroups = [ "networkmanager" "wheel" "docker"];
+    extraGroups = [ "networkmanager" "wheel" "docker" "libvirtd" "kvm" ];
+    # shell = pkgs.zsh;
     packages = with pkgs; [];
   };
 
@@ -441,25 +449,6 @@ in {
         enable = true;
         userName = "Mykola Suprun";
         userEmail = "mykola.suprun@protonmail.com";
-      };
-
-      bash = {
-        enable = true;
-        enableCompletion = true;
-        bashrcExtra = ''
-          . /home/mykolas/MEGA/Sources/home_scripts/bashrc
-        '';
-        shellAliases = {
-          vi = "nvim";
-          vim = "nvim";
-          nano = "nvim";
-          editconf = "sudo subl /etc/nixos/configuration.nix";
-          sysbuild = "sudo nixos-rebuild switch";
-          sysupgrade = "sudo nixos-rebuild switch --upgrade";
-          confdir = "/etc/nixos";
-
-        };
-
       };
 
       zsh = {
@@ -515,6 +504,24 @@ in {
           confdir = "/etc/nixos";
           nsgc = "nix-collect-garbage";
           arch = "distrobox-enter arch";
+        };
+      };
+
+      bash = {
+        enable = true;
+        enableCompletion = true;
+        bashrcExtra = ''
+          . /home/mykolas/MEGA/Sources/home_scripts/bashrc
+        '';
+        shellAliases = {
+          vi = "nvim";
+          vim = "nvim";
+          nano = "nvim";
+          editconf = "sudo subl /etc/nixos/configuration.nix";
+          sysbuild = "sudo nixos-rebuild switch";
+          sysupgrade = "sudo nixos-rebuild switch --upgrade";
+          confdir = "/etc/nixos";
+
         };
       };
     };
